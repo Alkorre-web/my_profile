@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Запросы | Андрей Лобашев</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="index.html" class="logo">Андрей Лобашев</a>
+            <nav>
+                <a href="index.html">Главная</a>
+                <a href="artifacts.html">Артефакты</a>
+                <a href="sql.html" class="active">SQL Запросы</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section>
+            <h2>Мои SQL запросы</h2>
+            <div class="filters">
+                <select id="categoryFilter">
+                    <option value="all">Все категории</option>
+                    <option value="analytics">Аналитика</option>
+                    <option value="optimization">Оптимизация</option>
+                </select>
+                <input type="text" id="tagFilter" placeholder="Поиск по тегу (например: postgresql)">
+            </div>
+
+            <div id="sqlGrid" class="artifacts-grid">Загрузка задач...</div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="sqlModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Название задачи</h2>
+                <button class="btn-icon" onclick="closeSqlModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="sql-section">
+                    <h3>📌 Задача</h3>
+                    <p id="modalTaskDesc" class="sql-text"></p>
+                </div>
+
+                <div class="sql-split-view">
+                    <div class="sql-section">
+                        <h3>🗄️ ERD Диаграмма</h3>
+                        <img id="modalErd" src="" alt="ERD Diagram" class="erd-image">
+                    </div>
+                    <div class="sql-section">
+                        <h3>💻 SQL Запрос</h3>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode()">Копировать</button>
+                            <pre><code id="modalSql"></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sql-section thought-process">
+                    <h3>💡 Ход мыслей</h3>
+                    <div id="modalThoughts" class="sql-text"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>
+                <a href="mailto:lobashev.andrey@inbox.ru">lobashev.andrey@inbox.ru</a> |
+                <a href="https://t.me/Andrulicke" target="_blank">Telegram</a> |
+                <a href="https://github.com/Alkorre-web" target="_blank">GitHub</a> |
+                <a href="tel:+79823412519">+7 (982) 341-25-19</a>
+            </p>
+            <p style="margin-top: 1rem; opacity: 0.6;">© 2026 Андрей Лобашев</p>
+        </div>
+    </footer>
+
+    <script>
+        const API = 'http://localhost:8000/api/v1';
+        let allTasks = [];
+
+        async function loadTasks() {
+            try {
+                const res = await fetch(`${API}/sql/`);
+                allTasks = await res.json();
+                renderTasks(allTasks);
+            } catch (err) {
+                document.getElementById('sqlGrid').innerHTML = 'Ошибка загрузки';
+                console.error(err);
+            }
+        }
+
+        function renderTasks(tasks) {
+            const grid = document.getElementById('sqlGrid');
+            if (!tasks || tasks.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">SQL задачи пока не добавлены</p>';
+                return;
+            }
+            grid.innerHTML = tasks.map(t => `
+                <div class="artifact-card sql-card" onclick="openSqlModal('${t.id}')">
+                    <h3>${t.title}</h3>
+                    <div class="tags">
+                        ${t.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function openSqlModal(id) {
+            try {
+                const res = await fetch(`${API}/sql/${id}`);
+                const data = await res.json();
+
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById('modalTitle').textContent = data.title || 'Без названия';
+                document.getElementById('modalTaskDesc').textContent = data.описание_задачи || '';
+                document.getElementById('modalErd').src = ERD_BASE_URL || '';
+                document.getElementById('modalSql').textContent = data.sql_код || '';
+                document.getElementById('modalThoughts').innerHTML = (data.ход_мыслей || '').replace(/\n/g, '<br>');
+
+                document.getElementById('sqlModal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } catch (err) {
+                console.error('Ошибка загрузки задачи:', err);
+            }
+        }
+        function closeSqlModal() {
+            document.getElementById('sqlModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function copyCode() {
+            const code = document.getElementById('modalSql').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Скопировано!';
+                setTimeout(() => btn.textContent = originalText, 2000);
+            });
+        }
+
+        function filterTasks() {
+            const cat = document.getElementById('categoryFilter').value;
+            const tag = document.getElementById('tagFilter').value.toLowerCase();
+            const filtered = allTasks.filter(t => {
+                const matchCat = cat === 'all' || t.category === cat;
+                const matchTag = tag === '' || t.tags.some(tg => tg.toLowerCase().includes(tag));
+                return matchCat && matchTag;
+            });
+            renderTasks(filtered);
+        }
+
+        document.getElementById('categoryFilter').addEventListener('change', filterTasks);
+        document.getElementById('tagFilter').addEventListener('input', filterTasks);
+
+        document.getElementById('sqlModal').addEventListener('click', (e) => {
+            if (e.target.id === 'sqlModal') closeSqlModal();
+        });
+
+        loadTasks();
+    </script>
+</body>
+</html>

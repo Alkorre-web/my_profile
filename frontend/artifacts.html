@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Артефакты | Андрей Лобашев</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="index.html" class="logo">Андрей Лобашев</a>
+            <nav>
+                <a href="index.html">Главная</a>
+                <a href="artifacts.html" class="active">Артефакты</a>
+                <a href="sql.html">SQL Запросы</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section>
+            <h2>Мои артефакты</h2>
+            <div class="filters">
+                <select id="categoryFilter">
+                    <option value="all">Все категории</option>
+                    <option value="backend">Backend</option>
+                    <option value="architecture">Архитектура</option>
+                    <option value="requirements">Требования</option>
+                </select>
+                <input type="text" id="tagFilter" placeholder="Поиск по тегу...">
+            </div>
+            <div id="artifactsGrid" class="artifacts-grid">Загрузка...</div>
+        </section>
+    </main>
+
+    <!-- Модальное окно для артефакта -->
+    <div class="modal-overlay" id="artifactModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="artifactModalTitle">Название</h2>
+                <button class="btn-icon" onclick="closeArtifactModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="sql-section">
+                    <h3>📄 Полное описание</h3>
+                    <div id="artifactModalDesc" class="sql-text"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>
+                <a href="mailto:lobashev.andrey@inbox.ru">lobashev.andrey@inbox.ru</a> |
+                <a href="https://t.me/Andrulicke" target="_blank">Telegram</a> |
+                <a href="https://github.com/Alkorre-web" target="_blank">GitHub</a> |
+                <a href="tel:+79823412519">+7 (982) 341-25-19</a>
+            </p>
+            <p style="margin-top: 1rem; opacity: 0.6;">© 2026 Андрей Лобашев</p>
+        </div>
+    </footer>
+
+    <script>
+        const API = 'http://localhost:8000/api/v1';
+        let allArtifacts = [];
+
+        async function loadArtifacts() {
+            try {
+                const res = await fetch(`${API}/main/artifacts`);
+                allArtifacts = await res.json();
+                renderArtifacts(allArtifacts);
+            } catch (err) {
+                document.getElementById('artifactsGrid').innerHTML = 'Ошибка загрузки';
+                console.error(err);
+            }
+        }
+
+        function renderArtifacts(items) {
+            const grid = document.getElementById('artifactsGrid');
+            if (!items || items.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">Артефакты пока не добавлены</p>';
+                return;
+            }
+            grid.innerHTML = items.map(item => `
+                <div class="artifact-card" onclick="openArtifact('${item.id}')">
+                    <h3>${item.title || 'Без названия'}</h3>
+                    <p>${item.short_description || ''}</p>
+                    <div class="tags">
+                        ${(item.tags || []).map(t => `<span class="tag">#${t}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function openArtifact(id) {
+            try {
+                const res = await fetch(`${API}/main/artifacts/${id}`);
+                const data = await res.json();
+
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById('artifactModalTitle').textContent = data.title || 'Без названия';
+
+                // Берём полное описание, если нет — краткое
+                const fullDesc = data.полное_описание || data.краткое_описание || 'Нет описания';
+                // Преобразуем переносы строк и markdown-заголовки
+                const formatted = fullDesc
+                    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+                    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+                    .replace(/\n/g, '<br>');
+
+                document.getElementById('artifactModalDesc').innerHTML = formatted;
+
+                document.getElementById('artifactModal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function closeArtifactModal() {
+            document.getElementById('artifactModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function filterArtifacts() {
+            const cat = document.getElementById('categoryFilter').value;
+            const tag = document.getElementById('tagFilter').value.toLowerCase();
+            const filtered = allArtifacts.filter(item => {
+                const matchCat = cat === 'all' || item.category === cat;
+                const matchTag = tag === '' || (item.tags && item.tags.some(t => t.toLowerCase().includes(tag)));
+                return matchCat && matchTag;
+            });
+            renderArtifacts(filtered);
+        }
+
+        document.getElementById('categoryFilter').addEventListener('change', filterArtifacts);
+        document.getElementById('tagFilter').addEventListener('input', filterArtifacts);
+
+        document.getElementById('artifactModal').addEventListener('click', (e) => {
+            if (e.target.id === 'artifactModal') closeArtifactModal();
+        });
+
+        loadArtifacts();
+    </script>
+</body>
+</html>
