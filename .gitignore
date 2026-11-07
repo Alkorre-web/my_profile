@@ -1,8 +1,10 @@
-# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyd
+*.pyo
+*.pyc
 .Python
 build/
 develop-eggs/
@@ -17,42 +19,117 @@ sdist/
 var/
 wheels/
 *.egg-info/
-.installed.cfg
 *.egg
+.installed.cfg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Virtual environments
-venv/
+
 .venv/
+venv/
 ENV/
 env/
+.venv
+.ENV
 
-# IDE
-.vscode/
+
+# PyCharm / JetBrains
 .idea/
+*.iml
+*.ipr
+*.iws
+.out/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Vim
 *.swp
 *.swo
 *~
+.netrwhist
 
-# Environment
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+
 .env
 .env.local
 .env.*.local
+*.env
+*.secret
+*.key
+*.pem
+secrets/
 
-# Logs
+
 *.log
 logs/
+*.out
+tmp/
+temp/
+.tmp/
 
-# OS
+
+# macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
 
-# Docker
-docker-compose.override.yml
+# Windows
+$RECYCLE.BIN/
+System Volume Information/
+desktop.ini
+ntuser.dat*
 
-# Node (если будет)
+# Linux
+*~
+
+
+docker-compose.override.yml
+.docker/
+
+
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.npm
+.yarn
 
+.env.example
+docs/

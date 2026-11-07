@@ -3,6 +3,5 @@ uvicorn[standard]
 pydantic
 psycopg2-binary
 pymongo
-redis
 python-jose[cryptography]
 passlib[bcrypt]
